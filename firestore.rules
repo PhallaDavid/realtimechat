@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      // Anyone authenticated can read user profiles (needed to search friends)
+      allow read: if isAuthenticated();
+      
+      // Only the owner can create or update their profile
+      allow create: if isOwner(userId)
+                    && request.resource.data.keys().hasAll(['id', 'username', 'email'])
+                    && request.resource.data.id == userId
+                    && request.resource.data.username is string
+                    && request.resource.data.email is string;
+                    
+      allow update: if isOwner(userId) 
+                    && request.resource.data.keys().hasAny(['username', 'about', 'github_username', 'img_link', 'email', 'privacy', 'contacts'])
+                    && (!('id' in request.resource.data) || request.resource.data.id == userId);
+                    
+      allow delete: if isOwner(userId);
+    }
+
+    match /chats/{chatId}/messages/{messageId} {
+      // Allow read/write if the user is part of the chat (chatId contains their uid)
+      allow read, write: if isAuthenticated() && chatId.matches('.*' + request.auth.uid + '.*');
+    }
+
+    match /metadata/userCounter {
+      // No longer needed with Firebase Auth UIDs, but keeping for backwards compatibility if needed
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
