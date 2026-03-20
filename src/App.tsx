@@ -145,30 +145,63 @@ export default function App() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let userUnsubscribe: (() => void) | null = null;
+
+    const authUnsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as UserProfile;
-          setCurrentUser(userData);
-          setUpdateData(userData);
-        }
+        // Start real-time listener for the user document
+        userUnsubscribe = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+          if (docSnap.exists()) {
+            const userData = docSnap.data() as UserProfile;
+            setCurrentUser(userData);
+            // Only set updateData if we're not currently in the middle of an update
+            // or if it's the first time loading the user
+            setUpdateData(prev => {
+              if (Object.keys(prev).length === 0 || !showSettings) {
+                return userData;
+              }
+              return prev;
+            });
+          }
+        }, (err) => {
+          console.error("User profile listener error:", err);
+        });
       } else {
+        if (userUnsubscribe) {
+          userUnsubscribe();
+          userUnsubscribe = null;
+        }
         setCurrentUser(null);
+        setContactsList([]);
       }
     });
-    return () => unsubscribe();
-  }, []);
+
+    return () => {
+      authUnsubscribe();
+      if (userUnsubscribe) userUnsubscribe();
+    };
+  }, [showSettings]);
+
+  const prevContactsRef = useRef<string[]>([]);
 
   useEffect(() => {
     if (!currentUser?.contacts || currentUser.contacts.length === 0) {
       setContactsList([]);
+      prevContactsRef.current = [];
       return;
     }
     
+    // Check if contacts actually changed
+    const currentContacts = currentUser.contacts;
+    const prevContacts = prevContactsRef.current;
+    if (currentContacts.length === prevContacts.length && currentContacts.every((id, i) => id === prevContacts[i])) {
+      return;
+    }
+    prevContactsRef.current = currentContacts;
+    
     const fetchContacts = async () => {
       try {
-        const promises = currentUser.contacts!.map(id => getDoc(doc(db, 'users', id)));
+        const promises = currentContacts.map(id => getDoc(doc(db, 'users', id)));
         const snaps = await Promise.all(promises);
         const profiles: UserProfile[] = [];
         snaps.forEach(snap => {
@@ -294,12 +327,19 @@ export default function App() {
         createdAt: serverTimestamp()
       });
 
-      // Add to contacts if not already there
+      // Add to current user's contacts if not already there
       if (!currentUser.contacts || !currentUser.contacts.includes(activeFriend.id)) {
         await updateDoc(doc(db, 'users', currentUser.id), {
           contacts: arrayUnion(activeFriend.id)
         });
       }
+
+      // Add to recipient's contacts if not already there
+      // We don't check if it's already there on the client side for the recipient to avoid extra reads, 
+      // arrayUnion handles duplicates automatically in Firestore.
+      await updateDoc(doc(db, 'users', activeFriend.id), {
+        contacts: arrayUnion(currentUser.id)
+      });
     } catch (err) {
       console.error("Error sending message:", err);
     }
