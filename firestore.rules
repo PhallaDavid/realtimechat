@@ -18,14 +18,17 @@ service cloud.firestore {
       
       // Only the owner can create or update their profile
       allow create: if isOwner(userId)
-                    && request.resource.data.keys().hasAll(['id', 'username', 'email'])
+                    && request.resource.data.keys().hasAll(['id', 'username', 'email', 'xyncId'])
                     && request.resource.data.id == userId
+                    && request.resource.data.xyncId is string
+                    && request.resource.data.xyncId.matches('^[0-9]{9}$')
                     && request.resource.data.username is string
                     && request.resource.data.email is string;
                     
       allow update: if isOwner(userId) 
                     && request.resource.data.keys().hasAny(['username', 'about', 'github_username', 'img_link', 'email', 'privacy', 'contacts'])
                     && (!('id' in request.resource.data) || request.resource.data.id == userId)
+                    && (!('xyncId' in request.resource.data) || request.resource.data.xyncId == resource.data.xyncId)
                     || (isAuthenticated() 
                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['contacts']) 
                         && request.resource.data.contacts.hasAll(resource.data.contacts) 
