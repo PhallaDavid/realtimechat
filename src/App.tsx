@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Cookies from 'js-cookie';
 import { Send, Search, Settings, MoreVertical, Paperclip, Smile, Mic, ArrowLeft, LogIn, Loader2, Edit2, X, Github, Mail, MessageSquare, Key, Trash2, Copy, Check } from 'lucide-react';
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, limit, doc, getDoc, setDoc, updateDoc, where, getDocs, runTransaction, deleteDoc, arrayUnion } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from 'firebase/auth';
@@ -8,6 +9,7 @@ import { db, auth } from './firebase';
 // --- Interfaces ---
 interface UserProfile {
   id: string;
+  xyncId: string;
   username: string;
   about: string;
   github_username: string;
@@ -66,6 +68,24 @@ export default function App() {
 
   // --- Functions ---
 
+  const generateUniqueXyncId = async (): Promise<string> => {
+    let xyncId = '';
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    while (!isUnique && attempts < maxAttempts) {
+      xyncId = Math.floor(111111111 + Math.random() * 888888889).toString();
+      const q = query(collection(db, 'users'), where('xyncId', '==', xyncId));
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
+        isUnique = true;
+      }
+      attempts++;
+    }
+    return xyncId;
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !name) return;
@@ -77,13 +97,17 @@ export default function App() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Create user profile in Firestore
+      // 2. Generate a unique 9-digit ID (111111111 - 999999999)
+      const xyncId = await generateUniqueXyncId();
+
+      // 3. Create user profile in Firestore
       const newUserRef = doc(db, 'users', user.uid);
       const userData = {
         id: user.uid,
+        xyncId: xyncId,
         username: name,
         email: email,
-        img_link: photoUrl || `https://picsum.photos/seed/${user.uid}/200/200`,
+        img_link: photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
         about: 'Hey there! I am using Xync.',
         github_username: '',
         privacy: {
@@ -95,7 +119,8 @@ export default function App() {
       };
       await setDoc(newUserRef, userData);
 
-      setGeneratedId(user.uid);
+      Cookies.set('xync_user_id', xyncId, { expires: 30 });
+      setGeneratedId(xyncId);
       setCurrentUser(userData);
       setUpdateData(userData);
     } catch (err: any) {
@@ -119,6 +144,7 @@ export default function App() {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data() as UserProfile;
+        Cookies.set('xync_user_id', userData.xyncId, { expires: 30 });
         setCurrentUser(userData);
         setUpdateData(userData);
       } else {
@@ -135,6 +161,7 @@ export default function App() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
+      Cookies.remove('xync_user_id');
       setCurrentUser(null);
       setActiveFriend(null);
       setMessages([]);
@@ -150,9 +177,18 @@ export default function App() {
     const authUnsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         // Start real-time listener for the user document
-        userUnsubscribe = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+        userUnsubscribe = onSnapshot(doc(db, 'users', user.uid), async (docSnap) => {
           if (docSnap.exists()) {
             const userData = docSnap.data() as UserProfile;
+            
+            // Migration: If user doesn't have a xyncId, generate one
+            if (!userData.xyncId) {
+              const newXyncId = await generateUniqueXyncId();
+              await updateDoc(doc(db, 'users', user.uid), { xyncId: newXyncId });
+              userData.xyncId = newXyncId;
+            }
+
+            Cookies.set('xync_user_id', userData.xyncId, { expires: 30 });
             setCurrentUser(userData);
             // Only set updateData if we're not currently in the middle of an update
             // or if it's the first time loading the user
@@ -219,16 +255,16 @@ export default function App() {
 
   const handleSearchFriend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchId.trim() || searchId === currentUser?.id) return;
+    if (!searchId.trim() || searchId === currentUser?.xyncId) return;
 
     setIsSearching(true);
     setSearchError('');
     try {
-      const friendRef = doc(db, 'users', searchId);
-      const friendSnap = await getDoc(friendRef);
+      const q = query(collection(db, 'users'), where('xyncId', '==', searchId.trim()));
+      const querySnapshot = await getDocs(q);
       
-      if (friendSnap.exists()) {
-        setActiveFriend(friendSnap.data() as UserProfile);
+      if (!querySnapshot.empty) {
+        setActiveFriend(querySnapshot.docs[0].data() as UserProfile);
         setSearchId('');
       } else {
         setSearchError('User not found with this ID.');
@@ -772,10 +808,10 @@ export default function App() {
                 </div>
                 
                 <div className="flex items-center justify-center gap-2 text-[#8696a0] bg-[#202c33] px-4 py-2 rounded-full shadow-sm">
-                  <span className="text-sm font-mono">ID: {currentUser.id}</span>
+                  <span className="text-sm font-mono">ID: {currentUser.xyncId}</span>
                   <button 
                     onClick={() => {
-                      navigator.clipboard.writeText(currentUser.id);
+                      navigator.clipboard.writeText(currentUser.xyncId);
                       setCopied(true);
                       setTimeout(() => setCopied(false), 2000);
                     }}
