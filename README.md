@@ -79,4 +79,4 @@ Ensure your Firestore security rules are configured to protect user data and cha
 This project is open-source and available under the [MIT License](LICENSE).
 
 ---
-Developed with ❤️ by [sh4lu-z]
+Developed with ❤️ by sh4lu-z
