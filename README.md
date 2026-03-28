@@ -35,7 +35,7 @@ Xync is a modern, real-time chat application inspired by WhatsApp Web. It provid
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Syntiox/Xync.git
    cd xync
    ```
 
