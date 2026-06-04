@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0398527274",
-  "appId": "1:84306727820:web:cc9ae720edcf0baf293ca9",
-  "apiKey": "AIzaSyDArAlO4r5XwO_QoJDXercc8ZYTS9md3lk",
-  "authDomain": "gen-lang-client-0398527274.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-aed2660d-10c4-41a6-a54c-02e34e71e728",
-  "storageBucket": "gen-lang-client-0398527274.firebasestorage.app",
-  "messagingSenderId": "84306727820",
-  "measurementId": ""
+  "apiKey": "AIzaSyCd0KagQr7AjTbxx7itLwsJZOHepEuGCCU",
+  "authDomain": "easyscan-46657.firebaseapp.com",
+  "databaseURL": "https://easyscan-46657-default-rtdb.asia-southeast1.firebasedatabase.app",
+  "projectId": "easyscan-46657",
+  "storageBucket": "easyscan-46657.firebasestorage.app",
+  "messagingSenderId": "919709446321",
+  "appId": "1:919709446321:web:aba8b110fd89bc780ab290",
+  "measurementId": "G-VMBNX98DY9"
 }

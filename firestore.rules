@@ -25,16 +25,36 @@ service cloud.firestore {
                     && request.resource.data.username is string
                     && request.resource.data.email is string;
                     
-      allow update: if isOwner(userId) 
-                    && request.resource.data.keys().hasAny(['username', 'about', 'github_username', 'img_link', 'email', 'privacy', 'contacts'])
-                    && (!('id' in request.resource.data) || request.resource.data.id == userId)
-                    && (!('xyncId' in request.resource.data) || request.resource.data.xyncId == resource.data.xyncId)
-                    || (isAuthenticated() 
-                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['contacts']) 
-                        && request.resource.data.contacts.hasAll(resource.data.contacts) 
-                        && (request.resource.data.contacts.size() == resource.data.contacts.size() 
-                            || (request.resource.data.contacts.size() == resource.data.contacts.size() + 1 
-                                && request.resource.data.contacts.hasAny([request.auth.uid]))));
+      allow update: if (
+                      isOwner(userId)
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                        'username',
+                        'about',
+                        'github_username',
+                        'img_link',
+                        'email',
+                        'privacy',
+                        'contacts',
+                        'xyncId'
+                      ])
+                      && (!('id' in request.resource.data) || request.resource.data.id == userId)
+                      && (
+                        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['xyncId'])
+                        || !('xyncId' in resource.data)
+                      )
+                    )
+                    || (
+                      isAuthenticated()
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['contacts'])
+                      && request.resource.data.contacts.hasAll(resource.data.contacts)
+                      && (
+                        request.resource.data.contacts.size() == resource.data.contacts.size()
+                        || (
+                          request.resource.data.contacts.size() == resource.data.contacts.size() + 1
+                          && request.resource.data.contacts.hasAny([request.auth.uid])
+                        )
+                      )
+                    );
                     
       allow delete: if isOwner(userId);
     }

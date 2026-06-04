@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Cookies from 'js-cookie';
 import { Send, Search, Settings, MoreVertical, Paperclip, Smile, Mic, ArrowLeft, LogIn, Loader2, Edit2, X, Github, Mail, MessageSquare, Key, Trash2, Copy, Check } from 'lucide-react';
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, limit, doc, getDoc, setDoc, updateDoc, where, getDocs, runTransaction, deleteDoc, arrayUnion } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 import { db, auth } from './firebase';
 
@@ -30,9 +30,32 @@ interface Message {
   createdAt: any;
 }
 
+const USER_STORAGE_KEY = 'xync_user_profile';
+
+const readStoredUserProfile = (): UserProfile | null => {
+  try {
+    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+    return storedUser ? JSON.parse(storedUser) as UserProfile : null;
+  } catch (err) {
+    console.error('Error reading stored user profile:', err);
+    localStorage.removeItem(USER_STORAGE_KEY);
+    return null;
+  }
+};
+
+const storeUserProfile = (userData: UserProfile) => {
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+  Cookies.set('xync_user_id', userData.xyncId, { expires: 30 });
+};
+
+const clearStoredUserProfile = () => {
+  localStorage.removeItem(USER_STORAGE_KEY);
+  Cookies.remove('xync_user_id');
+};
+
 export default function App() {
   // --- States ---
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => readStoredUserProfile());
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -86,6 +109,28 @@ export default function App() {
     return xyncId;
   };
 
+  const createUserProfile = async (user: User, profileOverrides: Partial<UserProfile> = {}): Promise<UserProfile> => {
+    const xyncId = await generateUniqueXyncId();
+    const userData: UserProfile = {
+      id: user.uid,
+      xyncId,
+      username: profileOverrides.username || user.displayName || name || 'Xync User',
+      email: profileOverrides.email || user.email || email,
+      img_link: profileOverrides.img_link || user.photoURL || photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
+      about: 'Hey there! I am using Xync.',
+      github_username: '',
+      privacy: {
+        about: true,
+        email: true,
+        github: true
+      },
+      contacts: []
+    };
+
+    await setDoc(doc(db, 'users', user.uid), userData);
+    return userData;
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !name) return;
@@ -97,35 +142,51 @@ export default function App() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Generate a unique 9-digit ID (111111111 - 999999999)
-      const xyncId = await generateUniqueXyncId();
-
-      // 3. Create user profile in Firestore
-      const newUserRef = doc(db, 'users', user.uid);
-      const userData = {
-        id: user.uid,
-        xyncId: xyncId,
+      const userData = await createUserProfile(user, {
         username: name,
-        email: email,
-        img_link: photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
-        about: 'Hey there! I am using Xync.',
-        github_username: '',
-        privacy: {
-          about: true,
-          email: true,
-          github: true
-        },
-        contacts: []
-      };
-      await setDoc(newUserRef, userData);
+        email,
+        img_link: photoUrl
+      });
 
-      Cookies.set('xync_user_id', xyncId, { expires: 30 });
-      setGeneratedId(xyncId);
+      storeUserProfile(userData);
+      setGeneratedId(userData.xyncId);
       setCurrentUser(userData);
       setUpdateData(userData);
     } catch (err: any) {
       console.error(err);
       setAuthError(err.message || 'Error during sign up.');
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsAuthenticating(true);
+    setAuthError('');
+
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data() as UserProfile;
+        storeUserProfile(userData);
+        setCurrentUser(userData);
+        setUpdateData(userData);
+        return;
+      }
+
+      const userData = await createUserProfile(user);
+      storeUserProfile(userData);
+      setGeneratedId(userData.xyncId);
+      setCurrentUser(userData);
+      setUpdateData(userData);
+    } catch (err: any) {
+      console.error(err);
+      setAuthError(err.message || 'Error signing in with Google.');
     } finally {
       setIsAuthenticating(false);
     }
@@ -144,7 +205,7 @@ export default function App() {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data() as UserProfile;
-        Cookies.set('xync_user_id', userData.xyncId, { expires: 30 });
+        storeUserProfile(userData);
         setCurrentUser(userData);
         setUpdateData(userData);
       } else {
@@ -161,7 +222,7 @@ export default function App() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      Cookies.remove('xync_user_id');
+      clearStoredUserProfile();
       setCurrentUser(null);
       setActiveFriend(null);
       setMessages([]);
@@ -188,7 +249,7 @@ export default function App() {
               userData.xyncId = newXyncId;
             }
 
-            Cookies.set('xync_user_id', userData.xyncId, { expires: 30 });
+            storeUserProfile(userData);
             setCurrentUser(userData);
             // Only set updateData if we're not currently in the middle of an update
             // or if it's the first time loading the user
@@ -208,6 +269,7 @@ export default function App() {
           userUnsubscribe = null;
         }
         setCurrentUser(null);
+        clearStoredUserProfile();
         setContactsList([]);
       }
     });
@@ -294,7 +356,9 @@ export default function App() {
       const userRef = doc(db, 'users', currentUser.id);
       await updateDoc(userRef, payload);
 
-      setCurrentUser({ ...currentUser, ...payload });
+      const updatedUser = { ...currentUser, ...payload };
+      storeUserProfile(updatedUser);
+      setCurrentUser(updatedUser);
       setShowSettings(false);
       alert('Profile Updated Successfully!');
     } catch (err) {
@@ -495,12 +559,32 @@ export default function App() {
             </button>
           </form>
 
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-[#2a3942]" />
+            <span className="text-xs uppercase text-[#8696a0]">or</span>
+            <div className="h-px flex-1 bg-[#2a3942]" />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={isAuthenticating}
+            className="w-full bg-white hover:bg-[#f1f5f9] disabled:opacity-70 disabled:hover:bg-white text-[#111b21] font-medium py-3 rounded-lg transition-colors flex justify-center items-center gap-3"
+          >
+            {isAuthenticating ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
+              <span className="h-5 w-5 rounded-full bg-[#4285f4] text-white text-sm font-bold flex items-center justify-center">G</span>
+            )}
+            Continue with Google
+          </button>
+
           <div className="mt-6 text-center">
             <button
               type="button"
               onClick={() => {
                 setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
-                setAuthError(null);
+                setAuthError('');
               }}
               className="text-[#00a884] hover:underline text-sm"
             >
