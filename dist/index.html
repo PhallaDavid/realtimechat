@@ -4,8 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Xync</title>
-    <script type="module" crossorigin src="/assets/index-DSaYl6Ys.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CZLS_Qxu.css">
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('xync-theme');
+          var dark =
+            t === 'dark' ||
+            (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-CpMoMa6p.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxEZVyY.css">
   </head>
   <body>
     <div id="root"></div>
