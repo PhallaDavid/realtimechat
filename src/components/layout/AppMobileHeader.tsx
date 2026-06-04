@@ -49,7 +49,7 @@ export function AppMobileHeader({ title, onProfileClick }: AppMobileHeaderProps)
             </p>
             <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
               <span className="sr-only">{USER_ID_LABEL}: </span>
-              <span className="sm:hidden">{currentUser.XyncId}</span>
+              <span className="sm:hidden">{currentUser.username}</span>
               <span className="hidden sm:inline">
                 {USER_ID_LABEL}: {currentUser.XyncId}
               </span>

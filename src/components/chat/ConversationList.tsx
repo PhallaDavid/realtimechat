@@ -63,12 +63,12 @@ export function ConversationList({ variant, ephemeralFriend }: ConversationListP
 
   return (
     <>
-      <div className="flex items-center justify-between border-b px-4 py-2.5">
+      {/* <div className="flex items-center justify-between border-b px-4 py-2.5">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {title}
         </h2>
         {!loading && <span className="text-xs text-muted-foreground">{listCount}</span>}
-      </div>
+      </div> */}
 
       <ScrollArea className="min-h-0 flex-1">
         {loading ? (
