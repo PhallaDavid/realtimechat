@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import Cookies from 'js-cookie';
 import {
   Send, Search, Settings, MoreVertical, Paperclip, Smile, Mic,
-  ArrowLeft, LogIn, Loader2, Edit2, X, Github, Mail, MessageSquare,
-  Key, Trash2, Copy, Check, LogOut
+  ArrowLeft, Loader2, Edit2, Github, MessageSquare,
+  Key, Trash2, Copy, Check, LogOut, Moon, Sun, Monitor,
+  LayoutDashboard, User as UserIcon, Shield
 } from 'lucide-react';
 import {
   collection, addDoc, query, orderBy, onSnapshot, serverTimestamp,
@@ -14,7 +15,7 @@ import {
   onAuthStateChanged, signOut, updatePassword, GoogleAuthProvider,
   signInWithPopup, User
 } from 'firebase/auth';
-import EmojiPicker, { Theme } from 'emoji-picker-react';
+import EmojiPicker, { Theme as EmojiPickerTheme } from 'emoji-picker-react';
 import { db, auth } from './firebase';
 
 import { Button } from '@/components/ui/button';
@@ -43,8 +44,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTheme, type Theme } from '@/hooks/use-theme';
 
 // --- Interfaces ---
 interface UserProfile {
@@ -121,6 +124,8 @@ export default function App() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
+  const [profileSaveMessage, setProfileSaveMessage] = useState('');
+  const { theme, setTheme, isDark } = useTheme();
 
   const generateUniqueXyncId = async (): Promise<string> => {
     let xyncId = '';
@@ -317,9 +322,10 @@ export default function App() {
       const updatedUser = { ...currentUser, ...payload };
       storeUserProfile(updatedUser);
       setCurrentUser(updatedUser);
-      setShowSettings(false);
-      alert('Profile Updated Successfully!');
-    } catch { alert('Profile Update Failed.'); }
+      setProfileSaveMessage('Profile updated successfully.');
+    } catch {
+      setProfileSaveMessage('Profile update failed. Please try again.');
+    }
     finally { setIsUpdating(false); }
   };
 
@@ -335,6 +341,14 @@ export default function App() {
       setPasswordMessage(err.message || 'Error updating password.');
     }
   };
+
+  useEffect(() => {
+    if (showSettings && currentUser) {
+      setUpdateData({ ...currentUser });
+      setProfileSaveMessage('');
+      setPasswordMessage('');
+    }
+  }, [showSettings, currentUser?.id]);
 
   useEffect(() => {
     if (!currentUser || !activeFriend) return;
@@ -383,7 +397,8 @@ export default function App() {
   if (!currentUser) {
     if (generatedId) {
       return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+          <AuthThemeToggle theme={theme} setTheme={setTheme} />
           <Card className="w-full max-w-md shadow-lg">
             <CardContent className="p-8 space-y-6 text-center">
               <div className="flex justify-center">
@@ -411,7 +426,8 @@ export default function App() {
     }
 
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
+        <AuthThemeToggle theme={theme} setTheme={setTheme} />
         <div className="flex items-center gap-3 mb-8">
           <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center">
             <MessageSquare size={26} className="text-primary-foreground" fill="currentColor" />
@@ -507,11 +523,24 @@ export default function App() {
             <div className="flex items-center gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                    aria-label="Toggle dark mode"
+                  >
+                    {isDark ? <Sun size={18} /> : <Moon size={18} />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{isDark ? 'Light mode' : 'Dark mode'}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}>
                     <Settings size={18} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Settings</TooltipContent>
+                <TooltipContent>Dashboard</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -554,12 +583,13 @@ export default function App() {
             )}
             {contactsList.length > 0 ? (
               contactsList.map((contact) => (
-                <ContactRow
-                  key={contact.id}
-                  contact={contact}
-                  isActive={activeFriend?.id === contact.id}
-                  onClick={() => setActiveFriend(contact)}
-                />
+                <React.Fragment key={contact.id}>
+                  <ContactRow
+                    contact={contact}
+                    isActive={activeFriend?.id === contact.id}
+                    onClick={() => setActiveFriend(contact)}
+                  />
+                </React.Fragment>
               ))
             ) : !activeFriend ? (
               <div className="flex flex-col items-center justify-center h-48 text-center px-6 text-muted-foreground">
@@ -669,7 +699,7 @@ export default function App() {
                 {showEmojiPicker && (
                   <div className="absolute bottom-16 left-4 z-50">
                     <EmojiPicker
-                      theme={Theme.AUTO}
+                      theme={isDark ? EmojiPickerTheme.DARK : EmojiPickerTheme.LIGHT}
                       onEmojiClick={(emoji) => {
                         setNewMessage((p) => p + emoji.emoji);
                         setShowEmojiPicker(false);
@@ -774,119 +804,246 @@ export default function App() {
           </SheetContent>
         </Sheet>
 
-        {/* ── Settings Sheet ── */}
+        {/* ── Settings Dashboard ── */}
         <Sheet open={showSettings} onOpenChange={setShowSettings}>
-          <SheetContent side="left" className="w-full md:w-[400px] p-0 flex flex-col">
-            <SheetHeader className="px-6 py-4 border-b bg-muted/30">
-              <SheetTitle>Profile & Settings</SheetTitle>
-            </SheetHeader>
-            <ScrollArea className="flex-1">
-              <div className="py-8 flex flex-col items-center px-6 border-b">
-                <div
-                  className="relative group cursor-pointer mb-4"
-                  onClick={() => setSelectedImage(currentUser.img_link)}
-                >
-                  <Avatar className="h-28 w-28">
-                    <AvatarImage src={currentUser.img_link} />
-                    <AvatarFallback className="text-3xl">{currentUser.username?.[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute inset-0 rounded-full bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Edit2 size={20} className="text-white mb-1" />
-                    <span className="text-white text-[10px] text-center uppercase leading-tight">View<br/>Photo</span>
-                  </div>
+          <SheetContent side="left" className="w-full sm:max-w-md p-0 flex flex-col gap-0">
+            <SheetHeader className="px-6 py-5 border-b bg-muted/30 shrink-0">
+              <div className="flex items-center gap-3 pr-8">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+                  <LayoutDashboard size={20} />
                 </div>
-
-                <div className="flex items-center gap-2 bg-muted rounded-full px-4 py-1.5">
-                  <span className="text-sm font-mono text-muted-foreground">ID: {currentUser.xyncId}</span>
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(currentUser.xyncId); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                  </button>
+                <div>
+                  <SheetTitle>Dashboard</SheetTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Manage your account & preferences</p>
                 </div>
               </div>
+            </SheetHeader>
 
-              <form onSubmit={handleUpdateProfile} className="p-6 space-y-5">
-                {[
-                  { id: 'u-name', label: 'Display Name', key: 'username', type: 'text', placeholder: 'Your name' },
-                  { id: 'u-about', label: 'About', key: 'about', type: 'text', placeholder: 'A short bio…' },
-                  { id: 'u-email', label: 'Email', key: 'email', type: 'email', placeholder: 'you@example.com' },
-                  { id: 'u-photo', label: 'Photo URL', key: 'img_link', type: 'url', placeholder: 'https://…' },
-                  { id: 'u-github', label: 'GitHub Username', key: 'github_username', type: 'text', placeholder: 'username' },
-                ].map(({ id, label, key, type, placeholder }) => (
-                  <div key={id} className="space-y-1.5">
-                    <Label htmlFor={id}>{label}</Label>
-                    <Input
-                      id={id}
-                      type={type}
-                      placeholder={placeholder}
-                      value={(updateData as any)[key] || ''}
-                      onChange={(e) => setUpdateData({ ...updateData, [key]: e.target.value })}
-                    />
+            <Tabs defaultValue="overview" className="flex flex-1 flex-col min-h-0 gap-0">
+              <div className="px-4 pt-4 pb-2 border-b shrink-0">
+                <TabsList className="w-full">
+                  <TabsTrigger value="overview" className="gap-1.5">
+                    <LayoutDashboard size={14} />
+                    <span className="sr-only sm:not-sr-only sm:inline">Overview</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="profile" className="gap-1.5">
+                    <UserIcon size={14} />
+                    <span className="sr-only sm:not-sr-only sm:inline">Profile</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="security" className="gap-1.5">
+                    <Shield size={14} />
+                    <span className="sr-only sm:not-sr-only sm:inline">Security</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <ScrollArea className="flex-1">
+                <TabsContent value="overview" className="mt-0 px-4 py-5 space-y-4">
+                  <div className="flex flex-col items-center text-center pb-2">
+                    <div
+                      className="relative group cursor-pointer mb-3"
+                      onClick={() => setSelectedImage(currentUser.img_link)}
+                    >
+                      <Avatar className="h-24 w-24 ring-2 ring-border">
+                        <AvatarImage src={currentUser.img_link} />
+                        <AvatarFallback className="text-2xl">{currentUser.username?.[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Edit2 size={18} className="text-white" />
+                      </div>
+                    </div>
+                    <p className="font-semibold">{currentUser.username}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2 max-w-[260px]">
+                      {currentUser.about || 'Hey there! I am using Xync.'}
+                    </p>
                   </div>
-                ))}
 
-                <Separator />
-                <div>
-                  <p className="text-sm font-medium mb-3">Privacy</p>
-                  <div className="space-y-3">
-                    {(['about', 'email', 'github'] as const).map((field) => (
-                      
-                      <div key={field} className="flex items-center justify-between">
-                        <Label htmlFor={`priv-${field}`} className="capitalize font-normal">Show {field}</Label>
-                        <Switch
-                          id={`priv-${field}`}
-                          checked={updateData.privacy?.[field] ?? true}
-                          onCheckedChange={(v) =>
-                            setUpdateData({
-                              ...updateData,
-                              privacy: { ...(updateData.privacy || { about: true, email: true, github: true }), [field]: v },
-                            })
-                          }
+                  <Card size="sm">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Your Xync ID</CardTitle>
+                      <CardDescription>Share this ID so others can find you</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex items-center justify-between gap-2 rounded-2xl bg-muted px-4 py-3">
+                        <span className="font-mono text-lg font-semibold tracking-wider">{currentUser.xyncId}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(currentUser.xyncId);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }}
+                        >
+                          {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Card size="sm" className="py-4">
+                      <CardContent className="pt-0 text-center">
+                        <p className="text-2xl font-semibold">{contactsList.length}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Contacts</p>
+                      </CardContent>
+                    </Card>
+                    <Card size="sm" className="py-4">
+                      <CardContent className="pt-0 text-center">
+                        <p className="text-2xl font-semibold">{isDark ? 'Dark' : 'Light'}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Theme</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Card size="sm">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        {isDark ? <Moon size={15} /> : <Sun size={15} />}
+                        Appearance
+                      </CardTitle>
+                      <CardDescription>Choose light, dark, or match your system</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <ThemeSelector theme={theme} setTheme={setTheme} />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="profile" className="mt-0 px-4 py-5">
+                  <form onSubmit={handleUpdateProfile} className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium flex items-center gap-2 mb-1">
+                        <UserIcon size={15} className="text-muted-foreground" />
+                        Edit Profile
+                      </h3>
+                      <p className="text-xs text-muted-foreground">Update how others see you on Xync</p>
+                    </div>
+
+                    {[
+                      { id: 'u-name', label: 'Display Name', key: 'username', type: 'text', placeholder: 'Your name' },
+                      { id: 'u-about', label: 'About', key: 'about', type: 'text', placeholder: 'A short bio…' },
+                      { id: 'u-email', label: 'Email', key: 'email', type: 'email', placeholder: 'you@example.com' },
+                      { id: 'u-photo', label: 'Photo URL', key: 'img_link', type: 'url', placeholder: 'https://…' },
+                      { id: 'u-github', label: 'GitHub Username', key: 'github_username', type: 'text', placeholder: 'username' },
+                    ].map(({ id, label, key, type, placeholder }) => (
+                      <div key={id} className="space-y-1.5">
+                        <Label htmlFor={id}>{label}</Label>
+                        <Input
+                          id={id}
+                          type={type}
+                          placeholder={placeholder}
+                          value={(updateData as Record<string, string>)[key] || ''}
+                          onChange={(e) => setUpdateData({ ...updateData, [key]: e.target.value })}
                         />
                       </div>
                     ))}
-                  </div>
-                </div>
 
-                <Button type="submit" disabled={isUpdating} className="w-full">
-                  {isUpdating ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
-                  Save Changes
-                </Button>
-              </form>
+                    <Separator />
+                    <div>
+                      <p className="text-sm font-medium mb-3">Privacy</p>
+                      <div className="space-y-3">
+                        {(['about', 'email', 'github'] as const).map((field) => (
+                          <div key={field} className="flex items-center justify-between">
+                            <Label htmlFor={`priv-${field}`} className="capitalize font-normal">
+                              Show {field}
+                            </Label>
+                            <Switch
+                              id={`priv-${field}`}
+                              checked={updateData.privacy?.[field] ?? true}
+                              onCheckedChange={(v) =>
+                                setUpdateData({
+                                  ...updateData,
+                                  privacy: {
+                                    ...(updateData.privacy || { about: true, email: true, github: true }),
+                                    [field]: v,
+                                  },
+                                })
+                              }
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-              <Separator className="mx-6" />
+                    {profileSaveMessage && (
+                      <p
+                        className={`text-sm ${profileSaveMessage.includes('success') ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}
+                      >
+                        {profileSaveMessage}
+                      </p>
+                    )}
 
-              <div className="p-6 space-y-4">
-                <div className="flex items-center gap-2">
-                  <Key size={15} className="text-muted-foreground" />
-                  <p className="text-sm font-medium">Change Password</p>
-                </div>
-                <form onSubmit={handleChangePassword} className="space-y-3">
-                  <Input
-                    type="password"
-                    placeholder="Current password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                  />
-                  <Input
-                    type="password"
-                    placeholder="New password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                  />
-                  {passwordMessage && (
-                    <p className={`text-sm ${passwordMessage.includes('success') ? 'text-green-600' : 'text-destructive'}`}>
-                      {passwordMessage}
+                    <Button type="submit" disabled={isUpdating} className="w-full">
+                      {isUpdating ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+                      Save Profile
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="security" className="mt-0 px-4 py-5 space-y-6">
+                  <div>
+                    <h3 className="text-sm font-medium flex items-center gap-2 mb-1">
+                      <Key size={15} className="text-muted-foreground" />
+                      Change Password
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Use a strong password you do not use elsewhere
                     </p>
-                  )}
-                  <Button type="submit" variant="outline" className="w-full">Update Password</Button>
-                </form>
-              </div>
-            </ScrollArea>
+                  </div>
+
+                  <form onSubmit={handleChangePassword} className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="current-pw">Current password</Label>
+                      <Input
+                        id="current-pw"
+                        type="password"
+                        placeholder="Current password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="new-pw">New password</Label>
+                      <Input
+                        id="new-pw"
+                        type="password"
+                        placeholder="New password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    {passwordMessage && (
+                      <p
+                        className={`text-sm ${passwordMessage.includes('success') ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}
+                      >
+                        {passwordMessage}
+                      </p>
+                    )}
+                    <Button type="submit" variant="outline" className="w-full">
+                      Update Password
+                    </Button>
+                  </form>
+
+                  <Separator />
+
+                  <Card size="sm">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        {isDark ? <Moon size={15} /> : <Sun size={15} />}
+                        Appearance
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <ThemeSelector theme={theme} setTheme={setTheme} />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </ScrollArea>
+            </Tabs>
           </SheetContent>
         </Sheet>
 
@@ -931,5 +1088,54 @@ function InfoRow({ label, value }: { label: string; value: string | null }) {
         ? <p className="text-sm">{value}</p>
         : <p className="text-sm text-muted-foreground italic">This info is private</p>}
     </div>
+  );
+}
+
+function ThemeSelector({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }) {
+  const options: { value: Theme; label: string; icon: React.ReactNode }[] = [
+    { value: 'light', label: 'Light', icon: <Sun size={16} /> },
+    { value: 'dark', label: 'Dark', icon: <Moon size={16} /> },
+    { value: 'system', label: 'System', icon: <Monitor size={16} /> },
+  ];
+
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {options.map((opt) => (
+        <Button
+          key={opt.value}
+          type="button"
+          variant={theme === opt.value ? 'default' : 'outline'}
+          className="flex h-auto flex-col gap-1.5 py-3"
+          onClick={() => setTheme(opt.value)}
+        >
+          {opt.icon}
+          <span className="text-xs">{opt.label}</span>
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function AuthThemeToggle({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }) {
+  const cycleTheme = () => {
+    const order: Theme[] = ['light', 'dark', 'system'];
+    const next = order[(order.indexOf(theme) + 1) % order.length];
+    setTheme(next);
+  };
+
+  const icon =
+    theme === 'dark' ? <Moon size={18} /> : theme === 'light' ? <Sun size={18} /> : <Monitor size={18} />;
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      className="absolute top-4 right-4"
+      onClick={cycleTheme}
+      aria-label="Toggle theme"
+    >
+      {icon}
+    </Button>
   );
 }
