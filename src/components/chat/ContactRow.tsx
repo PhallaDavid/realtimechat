@@ -92,32 +92,42 @@ export function ContactRow({
                 {timeLabel}
               </span>
             )}
-            {onDelete && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={(e) => e.stopPropagation()}
-                    className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-foreground rounded transition-opacity"
-                  >
-                    <MoreVertical size={14} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenuItem className="text-destructive flex items-center gap-1.5 cursor-pointer" onClick={onDelete}>
-                    <Trash2 size={14} />
-                    Delete chat
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
           </div>
         </div>
 
         {/* Last Message */}
-        <p className="text-xs text-muted-foreground truncate mt-1">
-          {previewText}
-        </p>
+        <div className="flex items-center justify-between gap-2 mt-1">
+  <p className="text-xs text-muted-foreground truncate flex-1">
+    {previewText}
+  </p>
+
+  {onDelete && (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-foreground rounded transition-opacity shrink-0"
+        >
+          <MoreVertical size={14} />
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent
+        align="end"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <DropdownMenuItem
+          className="text-destructive flex items-center gap-1.5 cursor-pointer"
+          onClick={onDelete}
+        >
+          <Trash2 size={14} />
+          Delete chat
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )}
+</div>
       </div>
     </div>
   );
