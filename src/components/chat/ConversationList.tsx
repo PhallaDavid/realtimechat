@@ -10,6 +10,7 @@ import { formatLastSeen, isUserOnline } from '@/src/lib/presence';
 import type { ContactPreview, UserProfile } from '@/src/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ContactRow } from '@/src/components/chat/ContactRow';
+import { USER_ID_LABEL } from '@/src/lib/brand';
 import { ContactListSkeleton } from '@/src/components/chat/ContactListSkeleton';
 
 interface ConversationListProps {
@@ -107,7 +108,7 @@ export function ConversationList({ variant, ephemeralFriend }: ConversationListP
                 <p className="text-sm font-medium text-foreground/80">
                   {variant === 'chats' ? 'No conversations yet' : 'No contacts yet'}
                 </p>
-                <p className="mt-1 text-xs">Use Search to find someone by Xync ID</p>
+                <p className="mt-1 text-xs">Use Search to find someone by {USER_ID_LABEL}</p>
               </div>
             )}
           </>

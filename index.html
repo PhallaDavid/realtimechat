@@ -3,11 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Xync</title>
+    <title>Niyey Knea</title>
+    <link rel="icon" href="/logo.svg" type="image/svg+xml" />
     <script>
       (function () {
         try {
-          var t = localStorage.getItem('xync-theme');
+          var legacy = localStorage.getItem('Xync-theme');
+          var t = localStorage.getItem('niyey-knea-theme') || legacy;
+          if (legacy && !localStorage.getItem('niyey-knea-theme')) {
+            localStorage.setItem('niyey-knea-theme', legacy);
+          }
           var dark =
             t === 'dark' ||
             (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);

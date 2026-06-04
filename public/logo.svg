@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="Niyey Knea">
+  <rect width="48" height="48" rx="14" fill="url(#nk-gradient)"/>
+  <defs>
+    <linearGradient id="nk-gradient" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D62828"/>
+      <stop offset="1" stop-color="#9B1C1C"/>
+    </linearGradient>
+  </defs>
+  <text x="24" y="31" text-anchor="middle" fill="white" font-size="17" font-weight="700" font-family="system-ui, -apple-system, Segoe UI, sans-serif">NK</text>
+</svg>

@@ -4,10 +4,10 @@ export function onSnapshotError(label: string) {
   return (err: FirestoreError) => {
     if (err.code === 'permission-denied') {
       console.warn(
-        `[Xync] Firestore permission denied (${label}). Deploy rules: firebase deploy --only firestore:rules`
+        `[Niyey Knea] Firestore permission denied (${label}). Deploy rules: firebase deploy --only firestore:rules`
       );
       return;
     }
-    console.error(`[Xync] ${label}:`, err);
+    console.error(`[Niyey Knea] ${label}:`, err);
   };
 }

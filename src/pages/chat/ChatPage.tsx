@@ -11,6 +11,7 @@ import { db } from '@/src/firebase';
 import { useAuth } from '@/src/contexts/auth-context';
 import { useFriend } from '@/src/hooks/use-friend';
 import { usePresence } from '@/src/hooks/use-presence';
+import { DEFAULT_ABOUT } from '@/src/lib/brand';
 import { getChatId } from '@/src/lib/chat';
 import { addRecentChat } from '@/src/lib/recent-chats';
 import { formatLastSeen, isUserOnline } from '@/src/lib/presence';
@@ -194,7 +195,7 @@ export function ChatPage() {
   if (friendLoading) {
     return (
       <main className={chatShell}>
-        <header className="z-20 flex h-14 shrink-0 items-center gap-3 border-b bg-background px-3 pt-safe sm:h-16 sm:px-4">
+        <header className="z-20 flex min-h-[calc(3.5rem+max(0.75rem,env(safe-area-inset-top,0px)))] shrink-0 items-center gap-3 border-b bg-background px-3 pb-2.5 pt-safe md:min-h-16 md:pt-0 sm:px-4">
           <Skeleton className="h-9 w-9 rounded-full md:hidden" />
           <div className="space-y-2">
             <Skeleton className="h-4 w-32" />
@@ -222,7 +223,7 @@ export function ChatPage() {
   return (
     <main className={chatShell}>
       <header
-        className="z-20 flex h-14 shrink-0 cursor-pointer items-center justify-between border-b bg-background px-3 transition-colors hover:bg-muted/30 sm:h-16 sm:px-4"
+        className="z-20 flex min-h-[calc(3.5rem+max(0.75rem,env(safe-area-inset-top,0px)))] shrink-0 cursor-pointer items-center justify-between border-b bg-background px-3 pb-2.5 pt-safe transition-colors hover:bg-muted/30 md:min-h-16 md:pt-0 sm:px-4"
         onClick={() => setShowContactInfo(true)}
       >
         <div className="flex items-center gap-3">
@@ -452,7 +453,7 @@ export function ChatPage() {
                 label="About"
                 value={
                   friend.privacy?.about !== false
-                    ? friend.about || 'Hey there! I am using Xync.'
+                    ? friend.about || DEFAULT_ABOUT
                     : null
                 }
               />

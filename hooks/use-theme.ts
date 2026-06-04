@@ -1,16 +1,26 @@
 import { useCallback, useEffect, useState } from 'react';
+import { LEGACY_THEME_STORAGE_KEY, THEME_STORAGE_KEY } from '@/src/lib/brand';
 
 export type Theme = 'light' | 'dark' | 'system';
 
-const STORAGE_KEY = 'xync-theme';
-
-export function getStoredTheme(): Theme {
+function readStoredThemeRaw(): string | null {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored) return stored;
+    const legacy = localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
+    if (legacy) {
+      localStorage.setItem(THEME_STORAGE_KEY, legacy);
+      return legacy;
+    }
   } catch {
     /* ignore */
   }
+  return null;
+}
+
+export function getStoredTheme(): Theme {
+  const stored = readStoredThemeRaw();
+  if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
   return 'system';
 }
 
@@ -39,7 +49,7 @@ export function useTheme() {
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
     try {
-      localStorage.setItem(STORAGE_KEY, next);
+      localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
       /* ignore */
     }

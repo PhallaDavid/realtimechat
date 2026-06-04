@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { RECENT_CHATS_EVENT } from '@/src/lib/brand';
 import { getRecentChatIds } from '@/src/lib/recent-chats';
 
 export function useConversationIds(
@@ -9,8 +10,8 @@ export function useConversationIds(
 
   useEffect(() => {
     const onUpdate = () => setRecentTick((t) => t + 1);
-    window.addEventListener('xync-recent-updated', onUpdate);
-    return () => window.removeEventListener('xync-recent-updated', onUpdate);
+    window.addEventListener(RECENT_CHATS_EVENT, onUpdate);
+    return () => window.removeEventListener(RECENT_CHATS_EVENT, onUpdate);
   }, []);
 
   return useMemo(() => {

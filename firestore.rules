@@ -18,9 +18,9 @@ service cloud.firestore {
       allow read: if isAuthenticated();
 
       allow create: if isOwner(userId)
-                    && request.resource.data.keys().hasAll(['id', 'username', 'email', 'xyncId'])
+                    && request.resource.data.keys().hasAll(['id', 'username', 'email', 'XyncId'])
                     && request.resource.data.id == userId
-                    && request.resource.data.xyncId is string
+                    && request.resource.data.XyncId is string
                     && request.resource.data.username is string
                     && request.resource.data.email is string;
 
@@ -34,7 +34,7 @@ service cloud.firestore {
                         'email',
                         'privacy',
                         'contacts',
-                        'xyncId'
+                        'XyncId'
                       ])
                       && (!('id' in request.resource.data) || request.resource.data.id == userId)
                     )

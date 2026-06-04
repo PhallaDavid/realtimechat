@@ -4,6 +4,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { useAuth } from '@/src/contexts/auth-context';
+import { APP_NAME, DEFAULT_ABOUT, USER_ID_LABEL } from '@/src/lib/brand';
 import { useContacts } from '@/src/hooks/use-contacts';
 import { useTheme } from '@/hooks/use-theme';
 import type { UserProfile } from '@/src/types';
@@ -125,24 +126,24 @@ export function SettingsSheet({ open, onOpenChange, onViewImage }: SettingsSheet
                 </button>
                 <p className="font-semibold">{currentUser.username}</p>
                 <p className="text-sm text-muted-foreground line-clamp-2 max-w-[260px]">
-                  {currentUser.about || 'Hey there! I am using Xync.'}
+                  {currentUser.about || DEFAULT_ABOUT}
                 </p>
               </div>
 
               <Card size="sm">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Your Xync ID</CardTitle>
+                  <CardTitle className="text-sm">Your {USER_ID_LABEL}</CardTitle>
                   <CardDescription>Share this ID so others can find you</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between gap-2 rounded-2xl bg-muted px-4 py-3">
-                    <span className="font-mono text-lg font-semibold tracking-wider">{currentUser.xyncId}</span>
+                    <span className="font-mono text-lg font-semibold tracking-wider">{currentUser.XyncId}</span>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => {
-                        navigator.clipboard.writeText(currentUser.xyncId);
+                        navigator.clipboard.writeText(currentUser.XyncId);
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2000);
                       }}
@@ -189,7 +190,7 @@ export function SettingsSheet({ open, onOpenChange, onViewImage }: SettingsSheet
                     <UserIcon size={15} className="text-muted-foreground" />
                     Edit Profile
                   </h3>
-                  <p className="text-xs text-muted-foreground">Update how others see you on Xync</p>
+                  <p className="text-xs text-muted-foreground">Update how others see you on {APP_NAME}</p>
                 </div>
 
                 {[

@@ -2,7 +2,7 @@ export type MessageType = 'text' | 'image' | 'file' | 'voice';
 
 export interface UserProfile {
   id: string;
-  xyncId: string;
+  XyncId: string;
   username: string;
   about: string;
   github_username: string;

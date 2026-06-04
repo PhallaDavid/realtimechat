@@ -23,6 +23,7 @@ import {
 import { auth, db } from '@/src/firebase';
 import { onSnapshotError } from '@/src/lib/firestore-listener';
 import type { UserProfile } from '@/src/types';
+import { DEFAULT_ABOUT, DEFAULT_USERNAME } from '@/src/lib/brand';
 import {
   clearStoredUserProfile,
   readStoredUserProfile,
@@ -45,34 +46,34 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 async function generateUniqueXyncId(): Promise<string> {
-  let xyncId = '';
+  let XyncId = '';
   let isUnique = false;
   let attempts = 0;
   while (!isUnique && attempts < 10) {
-      xyncId = String(Math.floor(100000000 + Math.random() * 900000000));
-    const q = query(collection(db, 'users'), where('xyncId', '==', xyncId));
+      XyncId = String(Math.floor(100000000 + Math.random() * 900000000));
+    const q = query(collection(db, 'users'), where('XyncId', '==', XyncId));
     const snap = await getDocs(q);
     if (snap.empty) isUnique = true;
     attempts++;
   }
-  return xyncId;
+  return XyncId;
 }
 
 async function createUserProfile(
   user: User,
   overrides: Partial<UserProfile> = {}
 ): Promise<UserProfile> {
-  const xyncId = await generateUniqueXyncId();
+  const XyncId = await generateUniqueXyncId();
   const userData: UserProfile = {
     id: user.uid,
-    xyncId,
-    username: overrides.username || user.displayName || 'Xync User',
+    XyncId,
+    username: overrides.username || user.displayName || DEFAULT_USERNAME,
     email: overrides.email || user.email || '',
     img_link:
       overrides.img_link ||
       user.photoURL ||
       `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
-    about: 'Hey there! I am using Xync.',
+    about: DEFAULT_ABOUT,
     github_username: '',
     privacy: { about: true, email: true, github: true },
     contacts: [],
@@ -100,10 +101,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 id: raw.id || docSnap.id,
                 contacts: raw.contacts ?? [],
               };
-              if (!userData.xyncId) {
+              if (!userData.XyncId) {
                 const newXyncId = await generateUniqueXyncId();
-                await updateDoc(doc(db, 'users', user.uid), { xyncId: newXyncId });
-                userData.xyncId = newXyncId;
+                await updateDoc(doc(db, 'users', user.uid), { XyncId: newXyncId });
+                userData.XyncId = newXyncId;
               }
               storeUserProfile(userData);
               setCurrentUser(userData);
@@ -134,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       img_link: photoUrl,
     });
     storeUserProfile(userData);
-    setGeneratedId(userData.xyncId);
+    setGeneratedId(userData.XyncId);
     setCurrentUser(userData);
   };
 
@@ -162,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const userData = await createUserProfile(cred.user);
     storeUserProfile(userData);
-    setGeneratedId(userData.xyncId);
+    setGeneratedId(userData.XyncId);
     setCurrentUser(userData);
     return true;
   };

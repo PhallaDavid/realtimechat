@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare } from 'lucide-react';
 import { useAuth } from '@/src/contexts/auth-context';
 import { useTheme } from '@/hooks/use-theme';
+import { AppLogo } from '@/src/components/brand/AppLogo';
+import { APP_NAME, USER_ID_LABEL } from '@/src/lib/brand';
 import { AuthThemeToggle } from '@/src/components/theme/AuthThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,18 +23,18 @@ export function WelcomePage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardContent className="p-8 space-y-6 text-center">
           <div className="flex justify-center">
-            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center">
-              <MessageSquare size={28} className="text-primary-foreground" fill="currentColor" />
-            </div>
+            <AppLogo size={56} />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold">Welcome to Xync!</h2>
+            <h2 className="text-2xl font-semibold">Welcome to {APP_NAME}!</h2>
             <p className="text-muted-foreground text-sm mt-2">
               Your account is ready. Save this ID — you'll need it to connect with others.
             </p>
           </div>
           <div className="bg-muted rounded-xl p-5 border">
-            <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Your Xync ID</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">
+              Your {USER_ID_LABEL}
+            </p>
             <span className="text-3xl font-mono tracking-widest font-bold">{generatedId}</span>
           </div>
           <Button

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, MessageSquare } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { AppLogo } from '@/src/components/brand/AppLogo';
 import { useAuth } from '@/src/contexts/auth-context';
 import { useTheme } from '@/hooks/use-theme';
 import { AuthThemeToggle } from '@/src/components/theme/AuthThemeToggle';
@@ -61,11 +62,8 @@ export function AuthPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
       <AuthThemeToggle theme={theme} setTheme={setTheme} />
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center">
-          <MessageSquare size={26} className="text-primary-foreground" fill="currentColor" />
-        </div>
-        <h1 className="text-3xl font-bold tracking-tight">Xync</h1>
+      <div className="mb-8">
+        <AppLogo size={48} showName />
       </div>
 
       <Card className="w-full max-w-md shadow-lg">

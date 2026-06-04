@@ -4,6 +4,7 @@ import { Loader2, Search, UserPlus } from 'lucide-react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/src/firebase';
 import { useAuth } from '@/src/contexts/auth-context';
+import { USER_ID_LABEL } from '@/src/lib/brand';
 import { addRecentChat } from '@/src/lib/recent-chats';
 import type { UserProfile } from '@/src/types';
 import { AppMobileHeader } from '@/src/components/layout/AppMobileHeader';
@@ -22,12 +23,12 @@ function SearchForm({ className }: { className?: string }) {
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
-    if (!currentUser || !searchId.trim() || searchId.trim() === currentUser.xyncId) return;
+    if (!currentUser || !searchId.trim() || searchId.trim() === currentUser.XyncId) return;
     setIsSearching(true);
     setError('');
     setResult(null);
     try {
-      const q = query(collection(db, 'users'), where('xyncId', '==', searchId.trim()));
+      const q = query(collection(db, 'users'), where('XyncId', '==', searchId.trim()));
       const snap = await getDocs(q);
       if (snap.empty) {
         setError('No user found with this ID.');
@@ -51,7 +52,7 @@ function SearchForm({ className }: { className?: string }) {
   return (
     <div className={className}>
       <form onSubmit={handleSearch} className="mx-auto w-full max-w-md space-y-3">
-        <p className="text-sm text-muted-foreground">Find people by their 9-digit Xync ID</p>
+        <p className="text-sm text-muted-foreground">Find people by their 9-digit {USER_ID_LABEL}</p>
         <div className="relative">
           <Search
             size={18}
@@ -60,7 +61,7 @@ function SearchForm({ className }: { className?: string }) {
           <Input
             value={searchId}
             onChange={(e) => setSearchId(e.target.value.replace(/\D/g, '').slice(0, 9))}
-            placeholder="Enter Xync ID…"
+            placeholder={`Enter ${USER_ID_LABEL}…`}
             className="h-12 pl-10 text-base tracking-widest"
             inputMode="numeric"
           />
@@ -81,7 +82,7 @@ function SearchForm({ className }: { className?: string }) {
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold">{result.username}</p>
-              <p className="font-mono text-xs text-muted-foreground">{result.xyncId}</p>
+              <p className="font-mono text-xs text-muted-foreground">{result.XyncId}</p>
             </div>
             <Button size="icon" onClick={() => startChat(result)} aria-label="Start chat">
               <UserPlus size={18} />
