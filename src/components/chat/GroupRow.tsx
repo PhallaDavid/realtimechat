@@ -1,9 +1,7 @@
 import { format } from 'date-fns';
-import { MoreVertical, Trash2 } from 'lucide-react';
+import { Users, MoreVertical, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PresenceBadge } from '@/src/components/chat/PresenceBadge';
-import { isUserOnline, type PresenceRecord } from '@/src/lib/presence';
-import type { ContactPreview } from '@/src/types';
+import type { GroupChat } from '@/src/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,11 +9,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface ContactRowProps {
-  contact: ContactPreview;
-  currentUserId: string;
+interface GroupRowProps {
+  group: GroupChat;
   isActive: boolean;
-  presence?: PresenceRecord;
   onClick: () => void;
   onDelete?: () => void;
 }
@@ -36,27 +32,16 @@ function formatMessageTime(date: Date | null): string {
   return format(date, 'MMM d');
 }
 
-export function ContactRow({
-  contact,
-  currentUserId,
-  isActive,
-  presence,
-  onClick,
-  onDelete,
-}: ContactRowProps) {
-  const last = contact.lastMessage;
-  const online = contact.isOnline ?? isUserOnline(presence);
+export function GroupRow({ group, isActive, onClick, onDelete }: GroupRowProps) {
+  const last = group.lastMessage;
 
   const previewText = last
-    ? last.text
-    : contact.about || 'No messages yet';
+    ? last.senderId === 'system'
+      ? last.text
+      : `${last.senderName}: ${last.text}`
+    : group.description || 'No messages yet';
 
-  const timeLabel = last?.createdAt
-    ? formatMessageTime(last.createdAt)
-    : null;
-
-  const statusText =
-    contact.statusText ?? (online ? 'Online' : 'Offline');
+  const timeLabel = last?.createdAt ? formatMessageTime(last.createdAt) : null;
 
   return (
     <div
@@ -65,24 +50,25 @@ export function ContactRow({
       } cursor-pointer`}
       onClick={onClick}
     >
-      {/* Avatar */}
+      {/* Group Avatar */}
       <div className="relative shrink-0">
         <Avatar className="h-11 w-11">
-          <AvatarImage src={contact.img_link} />
-          <AvatarFallback>
-            {contact.username?.[0]?.toUpperCase() || '?'}
+          <AvatarImage src={group.img_link} />
+          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+            {group.name?.[0]?.toUpperCase() || '?'}
           </AvatarFallback>
         </Avatar>
-
-        <PresenceBadge presence={presence} />
+        <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-background rounded-full border flex items-center justify-center text-muted-foreground shadow-sm">
+          <Users className="h-2.5 w-2.5" />
+        </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-sm truncate text-foreground">
-              {contact.username || 'Unknown'}
+            <p className="font-semibold text-sm truncate text-foreground">
+              {group.name || 'Unnamed Group'}
             </p>
           </div>
 
@@ -105,8 +91,8 @@ export function ContactRow({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenuItem className="text-destructive flex items-center gap-1.5 cursor-pointer" onClick={onDelete}>
-                    <Trash2 size={14} />
-                    Delete chat
+                    <LogOut size={14} />
+                    Leave group
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -114,7 +100,7 @@ export function ContactRow({
           </div>
         </div>
 
-        {/* Last Message */}
+        {/* Last Message or Description */}
         <p className="text-xs text-muted-foreground truncate mt-1">
           {previewText}
         </p>

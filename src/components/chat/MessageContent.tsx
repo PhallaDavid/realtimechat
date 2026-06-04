@@ -1,4 +1,4 @@
-import { Download, FileIcon, Mic } from 'lucide-react';
+import { Ban, Download, FileIcon, Mic } from 'lucide-react';
 import { getMessageType } from '@/src/lib/messages';
 import type { Message } from '@/src/types';
 
@@ -13,6 +13,16 @@ function mediaSrc(msg: Message): string | undefined {
 }
 
 export function MessageContent({ msg, isMe, onViewImage }: MessageContentProps) {
+  // Soft-deleted message — show placeholder regardless of type
+  if (msg.deleted) {
+    return (
+      <span className={`flex items-center gap-1.5 italic text-sm ${isMe ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+        <Ban size={13} className="shrink-0" />
+        This message was deleted
+      </span>
+    );
+  }
+
   const type = getMessageType(msg);
   const src = mediaSrc(msg);
 

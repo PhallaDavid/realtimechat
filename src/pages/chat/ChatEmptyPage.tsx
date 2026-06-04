@@ -9,7 +9,7 @@ export function ChatEmptyPage() {
       </div>
       <h2 className="mb-2 text-2xl font-light">{APP_NAME}</h2>
       <p className="max-w-xs text-center text-sm leading-relaxed">
-        Select a conversation or search for a contact by {USER_ID_LABEL} to start chatting.
+        Select a conversation to start chatting.
       </p>
     </main>
   );

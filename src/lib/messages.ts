@@ -37,5 +37,6 @@ export function normalizeMessage(id: string, data: Record<string, unknown>): Mes
     fileName: data.fileName as string | undefined,
     mimeType: data.mimeType as string | undefined,
     duration: data.duration as number | undefined,
+    deleted: (data.deleted as boolean) || false,
   };
 }

@@ -9,6 +9,7 @@ import { SearchPage } from '@/src/pages/app/SearchPage';
 import { SettingsPage } from '@/src/pages/app/SettingsPage';
 import { ChatEmptyPage } from '@/src/pages/chat/ChatEmptyPage';
 import { ChatPage } from '@/src/pages/chat/ChatPage';
+import { GroupChatPage } from '@/src/pages/chat/GroupChatPage';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function AuthLoading() {
@@ -61,6 +62,7 @@ export const appRoutes = [
           { path: 'settings', element: <SettingsPage /> },
           { index: true, element: <Navigate to="/app/chats" replace /> },
           { path: 'chat/:friendId', element: <ChatPage /> },
+          { path: 'group/:groupId', element: <GroupChatPage /> },
         ],
       },
     ],

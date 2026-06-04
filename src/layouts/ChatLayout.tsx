@@ -23,7 +23,7 @@ function isTabRoute(pathname: string) {
 }
 
 export function ChatLayout() {
-  const { friendId } = useParams();
+  const { friendId, groupId } = useParams();
   const location = useLocation();
   const { currentUser } = useAuth();
   const { friend } = useFriend(friendId);
@@ -35,8 +35,8 @@ export function ChatLayout() {
     friendId && friend && !currentUser?.contacts?.includes(friendId);
 
   const onTab = isTabRoute(location.pathname);
-  const showBottomNav = !friendId && onTab;
-  const showMobileMain = friendId || onTab;
+  const showBottomNav = !friendId && !groupId && onTab;
+  const showMobileMain = friendId || groupId || onTab;
 
   return (
     <TooltipProvider>
@@ -49,7 +49,7 @@ export function ChatLayout() {
           className={cn(
             'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
             showMobileMain ? 'flex' : 'hidden md:flex',
-            friendId && 'flex'
+            (friendId || groupId) && 'flex'
           )}
         >
           <div

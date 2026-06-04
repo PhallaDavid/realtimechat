@@ -5,7 +5,7 @@ import {
   ArrowLeft, Github, Loader2, Mic, MoreVertical, Paperclip, Search, Send, Smile, Square, Trash2, X,
 } from 'lucide-react';
 import {
-  collection, deleteDoc, doc, getDocs, limit, onSnapshot, orderBy, query,
+  collection, deleteDoc, doc, getDocs, limit, onSnapshot, orderBy, query, updateDoc,
 } from 'firebase/firestore';
 import { db } from '@/src/firebase';
 import { useAuth } from '@/src/contexts/auth-context';
@@ -171,7 +171,13 @@ export function ChatPage() {
     if (!currentUser || !friend) return;
     const chatId = getChatId(currentUser.id, friend.id);
     try {
-      await deleteDoc(doc(db, 'chats', chatId, 'messages', messageId));
+      await updateDoc(doc(db, 'chats', chatId, 'messages', messageId), {
+        deleted: true,
+        text: '',
+        mediaUrl: null,
+        fileName: null,
+        mimeType: null,
+      });
     } catch (err) {
       console.error(err);
     }
@@ -296,7 +302,7 @@ export function ChatPage() {
                   key={msg.id}
                   className={`group flex items-end gap-1.5 ${isMe ? 'justify-end' : 'justify-start'}`}
                 >
-                  {isMe && (
+                  {isMe && !msg.deleted && (
                     <button
                       type="button"
                       onClick={() => deleteMessage(msg.id)}
@@ -327,15 +333,15 @@ export function ChatPage() {
                         : '…'}
                     </span>
                   </div>
-                  {!isMe && (
-                    <button
-                      type="button"
-                      onClick={() => deleteMessage(msg.id)}
-                      className="mb-0.5 p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive md:opacity-100"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
+                    {/* {!isMe && (
+                      <button
+                        type="button"
+                        onClick={() => deleteMessage(msg.id)}
+                        className="mb-0.5 p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive md:opacity-100"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )} */}
                 </div>
               );
             })}

@@ -22,6 +22,7 @@ export interface Message {
   fileName?: string;
   mimeType?: string;
   duration?: number;
+  deleted?: boolean;
 }
 
 export interface LastMessagePreview {
@@ -35,4 +36,26 @@ export interface ContactPreview extends UserProfile {
   lastMessage?: LastMessagePreview;
   isOnline?: boolean;
   statusText?: string;
+}
+
+export interface GroupChat {
+  id: string;
+  name: string;
+  description: string;
+  createdBy: string;
+  createdAt: { toDate?: () => Date } | null;
+  members: string[];
+  img_link?: string;
+  lastMessage?: {
+    text: string;
+    senderId: string;
+    senderName: string;
+    createdAt: Date | null;
+    type?: MessageType;
+  };
+}
+
+export interface GroupMessage extends Message {
+  senderName: string;
+  senderAvatar?: string;
 }

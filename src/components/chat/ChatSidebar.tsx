@@ -1,5 +1,15 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { LogOut, Moon, Settings, Sun } from 'lucide-react';
+import {
+  LogOut,
+  Moon,
+  Settings,
+  Sun,
+  MessageCircle,
+  Users,
+  Search,
+  Plus,
+} from 'lucide-react';
+import { useState } from 'react';
 import { useAuth } from '@/src/contexts/auth-context';
 import { useTheme } from '@/hooks/use-theme';
 import type { UserProfile } from '@/src/types';
@@ -7,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ConversationList } from '@/src/components/chat/ConversationList';
+import { CreateGroupDialog } from '@/src/components/chat/CreateGroupDialog';
 import { cn } from '@/lib/utils';
 
 interface ChatSidebarProps {
@@ -20,6 +31,7 @@ export function ChatSidebar({ onOpenSettings, ephemeralFriend }: ChatSidebarProp
   const location = useLocation();
   const navigate = useNavigate();
   const { setTheme, isDark } = useTheme();
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
 
   const tabVariant =
     location.pathname.startsWith('/app/contacts') ? 'contacts' : 'chats';
@@ -60,6 +72,14 @@ export function ChatSidebar({ onOpenSettings, ephemeralFriend }: ChatSidebarProp
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => setShowCreateGroup(true)}>
+                <Plus size={18} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>New Group</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" onClick={onOpenSettings}>
                 <Settings size={18} />
               </Button>
@@ -81,29 +101,40 @@ export function ChatSidebar({ onOpenSettings, ephemeralFriend }: ChatSidebarProp
         </div>
       </div>
 
-      <nav className="flex border-b px-2 py-1.5 gap-1">
-        {(['chats', 'contacts'] as const).map((tab) => (
-          <Button
-            key={tab}
-            variant={tabVariant === tab ? 'secondary' : 'ghost'}
-            size="sm"
-            className="flex-1 capitalize"
-            onClick={() => navigate(tab === 'chats' ? '/app/chats' : '/app/contacts')}
-          >
-            {tab}
-          </Button>
-        ))}
-        <Button
-          variant={location.pathname.startsWith('/app/search') ? 'secondary' : 'ghost'}
-          size="sm"
-          className="flex-1"
-          onClick={() => navigate('/app/search')}
-        >
-          Search
-        </Button>
-      </nav>
+     <nav className="flex border-b px-2 py-1.5 gap-1">
+  <Button
+    variant={tabVariant === 'chats' ? 'secondary' : 'ghost'}
+    size="sm"
+    className="flex-1"
+    onClick={() => navigate('/app/chats')}
+  >
+    <MessageCircle className="mr-2 h-4 w-4" />
+    Chats
+  </Button>
+
+  <Button
+    variant={tabVariant === 'contacts' ? 'secondary' : 'ghost'}
+    size="sm"
+    className="flex-1"
+    onClick={() => navigate('/app/contacts')}
+  >
+    <Users className="mr-2 h-4 w-4" />
+    Contacts
+  </Button>
+
+  {/* <Button
+    variant={location.pathname.startsWith('/app/search') ? 'secondary' : 'ghost'}
+    size="sm"
+    className="flex-1"
+    onClick={() => navigate('/app/search')}
+  >
+    <Search className="mr-2 h-4 w-4" />
+    Search
+  </Button> */}
+</nav>
 
       <ConversationList variant={tabVariant} ephemeralFriend={ephemeralFriend} />
+      <CreateGroupDialog open={showCreateGroup} onOpenChange={setShowCreateGroup} />
     </aside>
   );
 }
